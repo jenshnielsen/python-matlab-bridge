@@ -15,6 +15,18 @@ from multiprocessing import Process
 
 MATLAB_FOLDER = '%s/matlab' % os.path.realpath(os.path.dirname(__file__))
 
+def _run_matlab_server(matlab_bin,matlab_port,matlab_log,matlab_id):
+    cmd_str = '%s -nodesktop -nosplash -nodisplay -r "'%matlab_bin
+    cmd_str += "addpath(genpath("
+    cmd_str += "'%s'"%MATLAB_FOLDER
+    cmd_str += ')), webserver(%s),exit"'%matlab_port
+    
+    if matlab_log:
+        cmd_str += ' -logfile ./pymatbridge/logs/matlablog_%s.txt > ./pymatbridge/logs/bashlog_%s.txt' % (matlab_id, matlab_id)
+
+    os.system(cmd_str)
+    return True
+
 class Matlab(object):
     """
     A class for communicating with a matlab session
@@ -77,21 +89,9 @@ class Matlab(object):
         self.maxtime = maxtime
 
     def start(self):
-        def _run_matlab_server():
-            cmd_str = '%s -nodesktop -nosplash -nodisplay -r "'%self.matlab
-            cmd_str += "addpath(genpath("
-            cmd_str += "'%s'"%MATLAB_FOLDER
-            cmd_str += ')), webserver(%s),exit"'%self.port
-            
-            if self.log:
-                cmd_str += ' -logfile ./pymatbridge/logs/matlablog_%s.txt > ./pymatbridge/logs/bashlog_%s.txt' % (self.id, self.id)
-
-            os.system(cmd_str)
-            return True
-
         # Start the MATLAB server
         print "Starting MATLAB on http://%s:%s" % (self.host, str(self.port))
-        self.server_process = Process(target=_run_matlab_server)
+        self.server_process = Process(target=_run_matlab_server, args=(self.matlab,self.port,self.log,self.id,))
         self.server_process.daemon = True
         self.server_process.start()
         while not self.is_connected():
