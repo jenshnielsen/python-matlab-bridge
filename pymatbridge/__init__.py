@@ -1,2 +1,2 @@
 from pymatbridge import *
-from matlab_magic import *
+#from matlab_magic import *
